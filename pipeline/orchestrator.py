@@ -87,6 +87,7 @@ def run_pipeline(user_prompt: str) -> dict:
         print(f"  Warning: Repair engine failed ({e}), using unrepaired output")
         final_schemas = raw_schemas
         metadata["repair_log"] = [{"status": "repair_failed", "error": str(e)}]
+        metadata["stages_completed"].append("stage4_repair")
     
     # ── Final Output ───────────────────────────────────────────────────────
     metadata["total_time"] = round(time.time() - pipeline_start, 2)

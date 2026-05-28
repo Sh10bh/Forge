@@ -1,0 +1,136 @@
+{
+  "normal_prompts": [
+    {
+      "id": "n1",
+      "prompt": "Build a CRM with login, contacts management, deals pipeline, and admin dashboard with role-based access for admins and sales reps",
+      "expected_entities": ["User", "Contact", "Deal"],
+      "expected_roles": ["admin", "sales_rep"]
+    },
+    {
+      "id": "n2",
+      "prompt": "Create an e-commerce store with product listings, shopping cart, checkout with payments, and order history for customers",
+      "expected_entities": ["Product", "Order", "Cart", "User"],
+      "expected_roles": ["customer", "admin"]
+    },
+    {
+      "id": "n3",
+      "prompt": "Build a project management tool like Trello with boards, lists, cards, team members, and due date reminders",
+      "expected_entities": ["Board", "List", "Card", "User"],
+      "expected_roles": ["user", "admin"]
+    },
+    {
+      "id": "n4",
+      "prompt": "Create a blog platform where writers can publish posts, readers can comment and like, and admins can moderate content",
+      "expected_entities": ["Post", "Comment", "User"],
+      "expected_roles": ["reader", "writer", "admin"]
+    },
+    {
+      "id": "n5",
+      "prompt": "Build an HR management system with employee profiles, leave requests, payroll, and manager approvals",
+      "expected_entities": ["Employee", "LeaveRequest", "Payroll"],
+      "expected_roles": ["employee", "manager", "hr_admin"]
+    },
+    {
+      "id": "n6",
+      "prompt": "Create a restaurant booking system where customers can reserve tables, view menus, and restaurants can manage availability",
+      "expected_entities": ["Restaurant", "Table", "Booking", "Menu"],
+      "expected_roles": ["customer", "restaurant_owner"]
+    },
+    {
+      "id": "n7",
+      "prompt": "Build a learning management system with courses, lessons, quizzes, student progress tracking, and instructor dashboards",
+      "expected_entities": ["Course", "Lesson", "Quiz", "User"],
+      "expected_roles": ["student", "instructor", "admin"]
+    },
+    {
+      "id": "n8",
+      "prompt": "Create a real estate platform where agents can list properties, buyers can search and favorite listings, and schedule viewings",
+      "expected_entities": ["Property", "Listing", "Viewing", "User"],
+      "expected_roles": ["buyer", "agent", "admin"]
+    },
+    {
+      "id": "n9",
+      "prompt": "Build a social media app where users can post photos, follow each other, comment, like posts, and have a feed",
+      "expected_entities": ["User", "Post", "Comment", "Follow"],
+      "expected_roles": ["user", "admin"]
+    },
+    {
+      "id": "n10",
+      "prompt": "Create an inventory management system for a warehouse with products, stock levels, purchase orders, and supplier management",
+      "expected_entities": ["Product", "StockItem", "PurchaseOrder", "Supplier"],
+      "expected_roles": ["warehouse_staff", "manager", "admin"]
+    }
+  ],
+  "edge_case_prompts": [
+    {
+      "id": "e1",
+      "type": "vague",
+      "prompt": "Build me an app",
+      "expected_behavior": "should_make_assumptions",
+      "notes": "Extremely vague — system should document assumptions heavily"
+    },
+    {
+      "id": "e2",
+      "type": "conflicting",
+      "prompt": "Build a free app where users pay for premium features but all features are free for everyone",
+      "expected_behavior": "should_resolve_conflict",
+      "notes": "Free vs paid conflict — system should make a decision and document it"
+    },
+    {
+      "id": "e3",
+      "type": "incomplete",
+      "prompt": "App with users and products",
+      "expected_behavior": "should_infer_missing",
+      "notes": "Minimal info — system should infer CRUD operations and basic auth"
+    },
+    {
+      "id": "e4",
+      "type": "too_complex",
+      "prompt": "Build a full clone of Shopify with multi-tenant storefronts, custom themes, app marketplace, payments with Stripe and PayPal, inventory, shipping integrations with FedEx and UPS, analytics, SEO tools, and an AI product recommendation engine",
+      "expected_behavior": "should_handle_complexity",
+      "notes": "Very large scope — should still produce valid output without crashing"
+    },
+    {
+      "id": "e5",
+      "type": "contradictory_roles",
+      "prompt": "Build an app where admins cannot see user data but must approve all user actions",
+      "expected_behavior": "should_resolve_or_document",
+      "notes": "Logically contradictory permissions — can't approve what you can't see"
+    },
+    {
+      "id": "e6",
+      "type": "no_auth",
+      "prompt": "Build a public dashboard that shows live weather data and stock prices — no login needed",
+      "expected_behavior": "should_handle_no_auth",
+      "notes": "Legitimate case with no authentication required"
+    },
+    {
+      "id": "e7",
+      "type": "single_word",
+      "prompt": "CRM",
+      "expected_behavior": "should_make_assumptions",
+      "notes": "Single word — should expand into a reasonable CRM design"
+    },
+    {
+      "id": "e8",
+      "type": "gibberish",
+      "prompt": "asdf build me xyz thing with aaa and bbb features lol idk",
+      "expected_behavior": "should_attempt_or_fail_gracefully",
+      "notes": "Near-gibberish — system should either extract minimal intent or fail with clear error"
+    },
+    {
+      "id": "e9",
+      "type": "duplicate_entities",
+      "prompt": "Build a contacts app with contacts, contacts management, and a contact list for managing contacts",
+      "expected_behavior": "should_deduplicate",
+      "notes": "Same entity mentioned multiple times — should deduplicate intelligently"
+    },
+    {
+      "id": "e10",
+      "type": "mixed_languages",
+      "prompt": "Build एक task manager जिसमें login हो and user tasks manage कर सके",
+      "expected_behavior": "should_handle_or_fail_gracefully",
+      "notes": "Mixed Hindi-English — tests robustness with non-standard input"
+    }
+  ]
+}
