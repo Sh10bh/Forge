@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.llm_client import call_llm_json
@@ -198,12 +199,15 @@ def generate_all_schemas(design: dict) -> dict:
     """
     print("  Generating DB schema...")
     db_schema = generate_db_schema(design)
+    time.sleep(5)
 
     print("  Generating API schema...")
     api_schema = generate_api_schema(design, db_schema)
+    time.sleep(5)
 
     print("  Generating UI schema...")
     ui_schema = generate_ui_schema(design, api_schema)
+    time.sleep(5)
 
     print("  Generating Auth schema...")
     auth_schema = generate_auth_schema(design)
