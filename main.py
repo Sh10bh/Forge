@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pipeline.orchestrator import run_pipeline
 from utils.code_generator import generate_fastapi_stubs, generate_sql_schema
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="App Compiler API",
@@ -28,11 +30,8 @@ class GenerateRequest(BaseModel):
 
 
 @app.get("/")
-def root():
-    return {
-        "message": "Forge is running",
-        "endpoints": ["/generate", "/generate-with-stubs", "/docs"]
-    }
+async def root():
+    return FileResponse("frontend/index.html")
 
 
 @app.post("/generate")
@@ -100,6 +99,7 @@ async def generate_with_stubs(req: GenerateRequest):
 def health():
     return {"status": "ok"}
 
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 if __name__ == "__main__":
     import uvicorn
