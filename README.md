@@ -2,7 +2,7 @@
 
 > Natural language → validated, executable JSON config in 4 pipeline stages.
 
-**[Live Demo](https://your-render-url.up.render.app)** · **[Video Walkthrough](#)** 
+**[Live Demo](https://forge-k1tk.onrender.com)** · **[Video Walkthrough](#)**
 
 ---
 
@@ -128,10 +128,41 @@ Edge cases tested include: single-word prompts, contradictory permissions, no-au
 
 ---
 
+## Cost vs Quality Tradeoffs
+
+This is a system design problem, not just a prompting problem. Every decision below was a conscious tradeoff.
+
+| Decision | Choice | Tradeoff |
+|---|---|---|
+| Temperature | `0.0` | Consistency over creativity — same input produces near-identical output, critical for a compiler-like system |
+| Model | Llama 3.3 70B via Groq | Strong JSON instruction-following, free tier, ~2–4s per call — GPT-4o would be faster but costs ~$0.08/request |
+| LLM calls per request | 6 total | Stage 1 + Stage 2 + 4× Stage 3 — more calls = more consistency but higher latency and token cost |
+| Delay between Stage 3 calls | 5s sleep | Prevents Groq TPM rate limit (12k tokens/min) — costs 15s latency but avoids failed runs |
+| Repair attempts | Max 3 passes | Beyond 3 = diminishing returns + significant latency added; most issues resolve in pass 1 |
+| Single model vs specialist models | Single model all stages | Simpler, cheaper, easier to debug — specialist models per stage would improve quality at ~6× the cost |
+| Chained context in Stage 3 | DB → API → UI → Auth | Each schema gets the previous as context — adds token cost per call but is the primary consistency mechanism |
+
+**Token usage per request:**
+- Each full pipeline run consumes ~15,000–20,000 tokens
+- Groq free tier: 100,000 tokens/day → ~5–6 full runs/day
+- Groq paid tier: removes daily limit, ~$0.0008/1k tokens → ~$0.02 per full run
+- GPT-4o equivalent: ~$0.08–0.12 per full run, lower latency, higher quality
+
+**Latency breakdown (approximate):**
+- Stage 1: ~2–3s
+- Stage 2: ~3–5s
+- Stage 3: ~40–60s (4 calls × 5s delay + inference time)
+- Stage 4: ~0–15s (0 if no repairs needed)
+- **Total: ~50–80s per request**
+
+The biggest latency cost is the 15s of intentional sleep in Stage 3. On a paid tier with higher TPM limits, the sleep can be reduced to 1–2s, cutting total time to ~25–35s.
+
+---
+
 ## Project Structure
 
 ```
-app_compiler/
+forge/
 ├── pipeline/
 │   ├── stage1_intent.py      # LLM call → structured intent object
 │   ├── stage2_design.py      # LLM call → architecture + permission matrix
@@ -150,7 +181,7 @@ app_compiler/
 │   └── evaluation_results.json
 ├── frontend/
 │   └── index.html            # single-file UI, no build step
-├── main.py                   # FastAPI server
+├── main.py                   # FastAPI server, serves frontend at /
 ├── requirements.txt
 └── .env                      # GROQ_API_KEY
 ```
@@ -160,8 +191,8 @@ app_compiler/
 ## Running Locally
 
 ```bash
-git clone https://github.com/yourusername/app-compiler
-cd app_compiler
+git clone https://github.com/Sh10bh/Forge.git
+cd Forge
 
 pip install -r requirements.txt
 
@@ -170,12 +201,10 @@ echo "GROQ_API_KEY=your_key_here" > .env
 
 # start the server
 uvicorn main:app --reload
-
-# open the UI
-open frontend/index.html
 ```
 
-API is at `http://localhost:8000/docs` — fully interactive via Swagger.
+Open `http://localhost:8000` — the UI loads directly.
+API docs at `http://localhost:8000/docs`.
 
 ---
 
@@ -188,11 +217,17 @@ API is at `http://localhost:8000/docs` — fully interactive via Swagger.
 Returns: validated 4-layer JSON config + pipeline metadata (timings, repair log).
 
 **`POST /generate-with-stubs`**
+
 Same as above, additionally returns:
 - `code_stubs.fastapi_routes` — runnable Python FastAPI file
 - `code_stubs.sql_schema` — SQL `CREATE TABLE` statements
 
 These stubs prove the output config is directly executable, not just abstract JSON.
+
+**`GET /health`**
+```json
+{ "status": "ok" }
+```
 
 ---
 
@@ -203,17 +238,17 @@ These stubs prove the output config is directly executable, not just abstract JS
 | LLM | Groq (Llama 3.3 70B) | Fast inference, free tier, reliable JSON output |
 | Validation | Pydantic v2 | Strict type enforcement, clear error messages for repair targeting |
 | Backend | FastAPI | Async, auto-docs, easy CORS setup |
-| Frontend | Vanilla HTML/CSS/JS | Zero build step, easy to host on GitHub Pages |
+| Frontend | Vanilla HTML/CSS/JS | Zero build step, served directly from FastAPI |
 
 ---
 
 ## Deployment
 
-Backend hosted on **Render** — set `GROQ_API_KEY` in Render environment variables, push to GitHub, Render auto-deploys via `render.toml`.
+Backend and frontend both served from **Render** at a single URL — `https://forge-k1tk.onrender.com`.
 
-Frontend hosted on **GitHub Pages** — enable Pages on the `main` branch pointing to `/frontend`.
+> Note: Free tier spins down after 15 min of inactivity. First request after sleep takes ~30s.
 
-Update `API_BASE` in `frontend/index.html` with your Render URL before deploying the frontend.
+Auto-deploys on every push to `main` via `render.yaml`.
 
 ---
 
