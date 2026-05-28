@@ -30,7 +30,7 @@ class GenerateRequest(BaseModel):
 @app.get("/")
 def root():
     return {
-        "message": "App Compiler is running",
+        "message": "Forge is running",
         "endpoints": ["/generate", "/generate-with-stubs", "/docs"]
     }
 
