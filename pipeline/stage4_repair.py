@@ -103,8 +103,8 @@ def run_repair_engine(raw_schemas: dict) -> tuple:
                     current[layer_name] = parsed
 
         # Check 2: Pydantic validation
-        is_valid, pydantic_errors = validate_schema(current)
-        if not is_valid:
+        pydantic_errors = validate_schema(current)
+        if pydantic_errors:
             print(f"    Fixing Pydantic errors...")
             broken_layer = None
             for err in pydantic_errors:
@@ -113,9 +113,15 @@ def run_repair_engine(raw_schemas: dict) -> tuple:
                         broken_layer = layer
                         break
             if broken_layer:
-                current[broken_layer] = repair_missing_fields(current[broken_layer], pydantic_errors)
+                try:
+                    current[broken_layer] = repair_missing_fields(current[broken_layer], pydantic_errors)
+                except Exception as repair_err:
+                    print(f" Could not repair {broken_layer}: {repair_err}, skipping")
             else:
-                current = repair_missing_fields(current, pydantic_errors)
+                try:
+                    current = repair_missing_fields(current, pydantic_errors)
+                except Exception as repair_err:
+                    print(f" Could not repair schema: {repair_err}, skipping")
             repair_log.append({"attempt": attempt, "type": "pydantic_validation", "errors": pydantic_errors})
             issues_found.append("pydantic_errors")
 
