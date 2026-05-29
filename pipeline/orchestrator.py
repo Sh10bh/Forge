@@ -64,8 +64,6 @@ def run_pipeline(user_prompt: str) -> dict:
         raw_schemas = generate_all_schemas(design)
         raw_schemas["app_name"] = intent.get("app_name","My App")
         raw_schemas["assumptions"] = intent.get("assumptions",[])
-        if "auth_schema" in raw_schemas:
-            raw_schemas["auth"] = raw_schemas.pop("auth_schema")
         metadata["timings"]["stage3_schemas"] = round(time.time() - t, 2)
         metadata["stages_completed"].append("stage3_schemas")
         print(f"  Done in {metadata['timings']['stage3_schemas']}s")

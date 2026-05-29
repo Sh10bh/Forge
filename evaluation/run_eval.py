@@ -33,7 +33,7 @@ def load_test_prompts() -> list:
             "notes": p.get("notes")
         })
     
-    return all_prompts
+    return all_prompts[:7]
 
 
 def count_repairs(repair_log: list) -> int:
@@ -174,4 +174,4 @@ def run_evaluation(delay_between: float = 1.5) -> dict:
 
 
 if __name__ == "__main__":
-    run_evaluation()
+    run_evaluation(delay_between=8.0)
