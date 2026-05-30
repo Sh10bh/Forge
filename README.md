@@ -2,7 +2,7 @@
 
 > Natural language → validated, executable JSON config in 4 pipeline stages.
 
-**[Live Demo](https://forge-k1tk.onrender.com)** · **[Video Walkthrough](#)**
+**[Live Demo](https://forge-k1tk.onrender.com)** · **[Video Walkthrough](https://www.loom.com/share/b813b69a22b9410097a1d8fe9c8e2fd5)**
 
 ---
 
