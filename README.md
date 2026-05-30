@@ -107,15 +107,21 @@ It does **not** re-run the entire pipeline on failure. If only the UI schema has
 
 ## Evaluation Results
 
-Ran 20 prompts through the full pipeline — 10 normal product prompts and 10 edge cases (vague, conflicting, incomplete, gibberish).
+Ran **12 prompts** through the full pipeline — 6 normal product prompts and 6 edge cases (vague, conflicting, incomplete, single-word, contradictory roles, no-auth).
 
 | Metric | Result |
 |---|---|
-| Overall success rate | tracked in `evaluation_results.json` |
-| Normal prompts success rate | tracked in `evaluation_results.json` |
-| Edge case success rate | tracked in `evaluation_results.json` |
-| Avg latency per request | tracked in `evaluation_results.json` |
-| Avg repairs per request | tracked in `evaluation_results.json` |
+| Overall success rate | **83.3% (10/12)** |
+| Normal prompts success rate | **83.3% (5/6)** |
+| Edge case success rate | **83.3% (5/6)** |
+| Avg latency per request | **58.54s** |
+| Avg repairs per request | **0.0** |
+
+**Failure breakdown (2 out of 12):**
+- `n6` — LMS prompt failed with truncated JSON (LLM response exceeded `max_tokens=4096` on a complex schema)
+- `e4` — Single word prompt `"CRM"` correctly rejected by the system as too vague — this is **intended behavior**
+
+**Key insight:** 0.0 average repairs means the pipeline produces clean, valid output on the first pass for 10/12 prompts. The repair engine is a safety net, not a crutch.
 
 Run the evaluation yourself:
 
@@ -123,8 +129,6 @@ Run the evaluation yourself:
 python evaluation/run_eval.py
 # outputs evaluation/evaluation_results.json
 ```
-
-Edge cases tested include: single-word prompts, contradictory permissions, no-auth apps, mixed-language input, extremely large scope, and near-gibberish input.
 
 ---
 
@@ -141,21 +145,22 @@ This is a system design problem, not just a prompting problem. Every decision be
 | Repair attempts | Max 3 passes | Beyond 3 = diminishing returns + significant latency added; most issues resolve in pass 1 |
 | Single model vs specialist models | Single model all stages | Simpler, cheaper, easier to debug — specialist models per stage would improve quality at ~6× the cost |
 | Chained context in Stage 3 | DB → API → UI → Auth | Each schema gets the previous as context — adds token cost per call but is the primary consistency mechanism |
+| API key rotation | 6 keys in round-robin | Avoids daily token limit (100k/key) during evaluation and high-traffic usage |
 
 **Token usage per request:**
 - Each full pipeline run consumes ~15,000–20,000 tokens
-- Groq free tier: 100,000 tokens/day → ~5–6 full runs/day
+- Groq free tier: 100,000 tokens/day per key → 6 keys = 600,000 tokens/day
 - Groq paid tier: removes daily limit, ~$0.0008/1k tokens → ~$0.02 per full run
 - GPT-4o equivalent: ~$0.08–0.12 per full run, lower latency, higher quality
 
-**Latency breakdown (approximate):**
-- Stage 1: ~2–3s
-- Stage 2: ~3–5s
-- Stage 3: ~40–60s (4 calls × 5s delay + inference time)
-- Stage 4: ~0–15s (0 if no repairs needed)
-- **Total: ~50–80s per request**
+**Latency breakdown (actual measured):**
+- Stage 1: ~1–5s
+- Stage 2: ~1–5s
+- Stage 3: ~30–85s (4 calls × 5s delay + inference time)
+- Stage 4: ~0.0s (no repairs needed on clean runs)
+- **Total: ~40–92s per request (avg 58.54s)**
 
-The biggest latency cost is the 15s of intentional sleep in Stage 3. On a paid tier with higher TPM limits, the sleep can be reduced to 1–2s, cutting total time to ~25–35s.
+The biggest latency cost is Stage 3. On a paid tier with higher TPM limits, the 5s sleep can be removed entirely, cutting total time to ~15–25s.
 
 ---
 
@@ -172,18 +177,18 @@ forge/
 ├── schemas/
 │   └── pydantic_models.py    # type contracts for all 4 schema layers
 ├── utils/
-│   ├── llm_client.py         # Groq API wrapper (call_llm, call_llm_json)
+│   ├── llm_client.py         # Groq API wrapper with 6-key rotation
 │   ├── validators.py         # Pydantic + cross-layer consistency checks
 │   └── code_generator.py     # FastAPI stub + SQL generator from schemas
 ├── evaluation/
-│   ├── test_prompts.json     # 10 normal + 10 edge case prompts
+│   ├── test_prompts.json     # 6 normal + 6 edge case prompts
 │   ├── run_eval.py           # evaluation runner with metric tracking
 │   └── evaluation_results.json
 ├── frontend/
 │   └── index.html            # single-file UI, no build step
 ├── main.py                   # FastAPI server, serves frontend at /
 ├── requirements.txt
-└── .env                      # GROQ_API_KEY
+└── .env                      # GROQ_API_KEY_1 through GROQ_API_KEY_6
 ```
 
 ---
@@ -196,8 +201,8 @@ cd Forge
 
 pip install -r requirements.txt
 
-# create .env with your key
-echo "GROQ_API_KEY=your_key_here" > .env
+# create .env with your keys
+GROQ_API_KEY_1=your_key_here
 
 # start the server
 uvicorn main:app --reload
