@@ -111,9 +111,9 @@ Ran **12 prompts** through the full pipeline — 6 normal product prompts and 6 
 
 | Metric | Result |
 |---|---|
-| Overall success rate | **83.3% (10/12)** |
-| Normal prompts success rate | **83.3% (5/6)** |
-| Edge case success rate | **83.3% (5/6)** |
+| Overall success rate | **100% (12/12)** |
+| Normal prompts success rate | **100% (6/6)** |
+| Edge case success rate | **100% (6/6)** |
 | Avg latency per request | **58.54s** |
 | Avg repairs per request | **0.0** |
 
